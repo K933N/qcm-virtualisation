@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QCM Virtualisation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <section id="start-screen" class="card active">
+      <p class="eyebrow">QCM interactif</p>
+      <h1>Virtualisation, hyperviseur et stockage</h1>
+      <p class="intro">
+        Chaque session te propose 10 questions tirées aleatoirement dans la banque.
+        L'ordre des questions et des reponses change a chaque relance.
+      </p>
+      <div class="actions">
+        <button id="start-btn" class="primary">Lancer le QCM</button>
+      </div>
+    </section>
+
+    <section id="quiz-screen" class="card" aria-live="polite">
+      <div class="topbar">
+        <span id="progress-text">Question 1 / 10</span>
+        <span id="score-hint">1 point par question</span>
+      </div>
+
+      <h2 id="question-text"></h2>
+      <form id="answers-form" class="answers"></form>
+      <div class="actions">
+        <button id="next-btn" class="primary" disabled>Question suivante</button>
+      </div>
+    </section>
+
+    <section id="result-screen" class="card">
+      <p class="eyebrow">Resultat</p>
+      <h2 id="result-title"></h2>
+      <p id="result-summary" class="intro"></p>
+      <div class="actions">
+        <button id="retry-btn" class="primary">Relancer un QCM</button>
+        <button id="errors-btn" class="secondary">Voir mes erreurs</button>
+      </div>
+      <section class="result-explanations">
+        <h3>Correction commentee</h3>
+        <p id="result-explanations-summary" class="intro"></p>
+        <div id="result-explanations-list" class="review-list"></div>
+      </section>
+    </section>
+
+    <section id="review-screen" class="card">
+      <p class="eyebrow">Correction detaillee</p>
+      <h2>Resume question par question</h2>
+      <div id="review-list" class="review-list"></div>
+      <div class="actions">
+        <button id="review-retry-btn" class="primary">Relancer un QCM</button>
+        <button id="review-back-btn" class="secondary">Retour au resultat</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="explanations.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
