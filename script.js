@@ -141,10 +141,74 @@
   { prompt: "Apres creation d'un snapshot, ou vont les nouvelles modifications ?", options: ["directement dans le disque principal uniquement", "dans un fichier delta lie au snapshot", "dans le BIOS", "dans le FQDN"], answer: "dans un fichier delta lie au snapshot" },
   { prompt: "Tu veux partager simplement des fichiers entre plusieurs utilisateurs sur le reseau. Quel choix correspond le mieux ?", options: ["NAS", "SAN", "VMkernel", "Thick Eager Zeroed"], answer: "NAS" },
   { prompt: "Tu veux fournir a des serveurs un stockage performant vu comme local. Quel choix correspond le mieux ?", options: ["NAS", "SAN", ".vmx", ".vmss"], answer: "SAN" }
+,
+  { prompt: "Un disque thick est un disque :", options: ["dynamique", "statique", "temporaire", "de sauvegarde"], answer: "statique" },
+  { prompt: "Avec un disque thick, l'espace disque est :", options: ["alloue progressivement selon l'usage", "reserve uniquement a l'arret de la VM", "reserve immediatement des la creation", "supprime apres l'installation"], answer: "reserve immediatement des la creation" },
+  { prompt: "Si on cree un disque de 100 Go en thick, que se passe-t-il ?", options: ["seuls 20 Go sont reserves au depart", "les 100 Go sont reserves immediatement", "aucun espace n'est reserve", "le disque devient automatiquement thin"], answer: "les 100 Go sont reserves immediatement" },
+  { prompt: "Quel est un avantage du disque thick ?", options: ["il economise toujours le plus d'espace", "il garantit l'espace disque des la creation", "il ne reserve jamais d'espace", "il ne peut pas saturer le datastore"], answer: "il garantit l'espace disque des la creation" },
+  { prompt: "Quel est un inconvenient du disque thick ?", options: ["il grandit trop lentement", "il consomme tout l'espace des la creation", "il ne peut pas etre utilise dans VMware", "il ne contient pas de donnees"], answer: "il consomme tout l'espace des la creation" },
+  { prompt: "Un disque thin est un disque :", options: ["statique", "local uniquement", "dynamique", "suspendu"], answer: "dynamique" },
+  { prompt: "Avec un disque thin, l'espace disque :", options: ["est reserve totalement des la creation", "est utilise selon l'espace reellement consomme", "est supprime a chaque redemarrage", "est toujours egal a la RAM"], answer: "est utilise selon l'espace reellement consomme" },
+  { prompt: "Si un disque de 100 Go en thin ne contient que 20 Go de donnees, il occupera environ :", options: ["100 Go", "200 Go", "20 Go", "0 Go"], answer: "20 Go" },
+  { prompt: "Quel est un avantage du disque thin ?", options: ["il reserve tout l'espace immediatement", "il permet une economie d'espace", "il initialise tous les blocs des la creation", "il remplace le swap"], answer: "il permet une economie d'espace" },
+  { prompt: "Quel est un risque principal du thin provisioning ?", options: ["le disque ne peut pas demarrer", "le datastore peut saturer si plusieurs VM grandissent en meme temps", "la RAM physique disparait", "le fichier .vmx est supprime"], answer: "le datastore peut saturer si plusieurs VM grandissent en meme temps" },
+  { prompt: "Le thin provisioning est automatiquement associe a un fonctionnement de type :", options: ["eager zeroed", "thick", "lazy zeroed", "snapshot"], answer: "lazy zeroed" },
+  { prompt: "La principale difference entre un disque thick et un disque thin est que :", options: ["le thick est dynamique et le thin est statique", "le thick reserve l'espace des la creation, le thin l'alloue selon l'usage", "le thick sert au swap et le thin au snapshot", "le thick ne peut pas etre utilise dans ESXi"], answer: "le thick reserve l'espace des la creation, le thin l'alloue selon l'usage" },
+  { prompt: "L'initialisation d'un disque consiste a :", options: ["supprimer le fichier .vmdk", "mettre les blocs du disque a zero avant leur utilisation", "changer le nom de la VM", "creer un snapshot"], answer: "mettre les blocs du disque a zero avant leur utilisation" },
+  { prompt: "L'initialisation sert a :", options: ["preparer le disque virtuel pour son utilisation", "reduire la RAM de la VM", "supprimer le datastore", "deplacer la VM dans un cluster"], answer: "preparer le disque virtuel pour son utilisation" },
+  { prompt: "Dans le mode Thick Eager Zeroed :", options: ["l'espace est alloue progressivement", "les blocs sont initialises au premier usage seulement", "l'espace est reserve immediatement et les blocs sont initialises des la creation", "il s'agit d'un disque thin"], answer: "l'espace est reserve immediatement et les blocs sont initialises des la creation" },
+  { prompt: "Un avantage du Thick Eager Zeroed est que :", options: ["la creation est toujours plus rapide", "le disque est entierement pret des le depart", "il consomme moins d'espace qu'un thin", "il n'utilise pas de datastore"], answer: "le disque est entierement pret des le depart" },
+  { prompt: "Quel est l'inconvenient principal du Thick Eager Zeroed ?", options: ["il ne reserve pas l'espace", "la creation du disque est plus longue", "il est impossible a utiliser avec VMware", "il ne contient pas de blocs"], answer: "la creation du disque est plus longue" },
+  { prompt: "Le Thick Eager Zeroed est utile :", options: ["pour certains environnements exigeants", "uniquement pour les snapshots", "uniquement sous Linux", "seulement pour reduire la RAM"], answer: "pour certains environnements exigeants" },
+  { prompt: "Dans le mode Thick Lazy Zeroed :", options: ["tous les blocs sont initialises immediatement", "l'espace n'est jamais reserve", "l'espace est reserve immediatement, mais les blocs sont initialises lors de leur utilisation", "il s'agit d'un fichier swap"], answer: "l'espace est reserve immediatement, mais les blocs sont initialises lors de leur utilisation" },
+  { prompt: "Quel est l'avantage principal du Thick Lazy Zeroed ?", options: ["creation plus rapide", "aucune reservation d'espace", "meilleure economie d'espace que le thin", "suppression du datastore"], answer: "creation plus rapide" },
+  { prompt: "Quel est l'inconvenient du Thick Lazy Zeroed ?", options: ["il ne peut pas stocker de donnees", "l'initialisation se fait progressivement lors de l'usage", "il est supprime a l'arret de la VM", "il est reserve aux snapshots"], answer: "l'initialisation se fait progressivement lors de l'usage" },
+  { prompt: "La difference entre Thick Eager Zeroed et Thick Lazy Zeroed concerne principalement :", options: ["le nombre de processeurs", "l'initialisation des blocs", "le systeme d'exploitation invite", "l'adresse IP"], answer: "l'initialisation des blocs" },
+  { prompt: "En Thick Lazy Zeroed, les blocs sont mis a zero :", options: ["des la creation du disque", "a l'arret de la VM", "au moment de leur premiere utilisation", "pendant le snapshot seulement"], answer: "au moment de leur premiere utilisation" },
+  { prompt: "En Thick Eager Zeroed, les blocs sont mis a zero :", options: ["au premier usage uniquement", "des la creation du disque", "au redemarrage de la VM", "seulement si le datastore est plein"], answer: "des la creation du disque" },
+  { prompt: "Le swap est :", options: ["un type de snapshot", "un espace disque utilise comme memoire temporaire", "un fichier de configuration principal", "un protocole reseau"], answer: "un espace disque utilise comme memoire temporaire" },
+  { prompt: "Le swap est utilise lorsque :", options: ["la RAM n'est pas suffisante", "le CPU est trop rapide", "le reseau ne fonctionne plus", "le BIOS est supprime"], answer: "la RAM n'est pas suffisante" },
+  { prompt: "Sous Windows, le fichier de swap est generalement :", options: [".vswp", "pagefile.sys", "swap.txt", "boot.ini"], answer: "pagefile.sys" },
+  { prompt: "Sous Linux, le swap peut etre :", options: ["uniquement un fichier .vmdk", "une partition swap ou un fichier swap", "uniquement dans le BIOS", "uniquement dans le processeur"], answer: "une partition swap ou un fichier swap" },
+  { prompt: "Sous VMware, le swap est gere avec le fichier :", options: [".vmx", ".vmdk", ".vswp", ".vmsn"], answer: ".vswp" },
+  { prompt: "Dans ESXi, le fichier .vswp est :", options: ["cree au demarrage de la VM et supprime a son arret", "cree uniquement lors d'un snapshot", "toujours permanent, meme VM arretee", "un fichier BIOS"], answer: "cree au demarrage de la VM et supprime a son arret" },
+  { prompt: "Le fichier .vswp correspond :", options: ["au snapshot VMware", "au fichier de swap VMware", "au fichier de configuration", "au fichier BIOS/UEFI"], answer: "au fichier de swap VMware" },
+  { prompt: "Lequel de ces couples est correct ?", options: ["Thick = dynamique / Thin = statique", "Thick = statique / Thin = dynamique", "Thick = snapshot / Thin = swap", "Thick = BIOS / Thin = inventaire"], answer: "Thick = statique / Thin = dynamique" },
+  { prompt: "Quelle affirmation est correcte ?", options: ["un disque thin reserve immediatement tout l'espace", "un disque thick utilise seulement l'espace reellement consomme", "un disque thin grandit selon les donnees stockees", "un disque thick est toujours associe a un snapshot"], answer: "un disque thin grandit selon les donnees stockees" },
+  { prompt: "Quelle affirmation est correcte ?", options: ["le thick eager zeroed initialise les blocs des la creation", "le thick lazy zeroed initialise tous les blocs avant creation", "le thin provisioning reserve tout l'espace immediatement", "le swap remplace le disque principal"], answer: "le thick eager zeroed initialise les blocs des la creation" },
+  { prompt: "Quelle affirmation est correcte a propos du swap ?", options: ["il remplace definitivement la RAM", "il utilise l'espace disque comme memoire temporaire", "il sert a configurer le BIOS", "il contient l'etat du snapshot"], answer: "il utilise l'espace disque comme memoire temporaire" },
+  { prompt: "Quels sont les avantages d'un disque thick ?", options: ["espace garanti", "meilleures performances generales", "moins de risque de saturation imprevue", "economie maximale d'espace"], answers: ["espace garanti", "meilleures performances generales", "moins de risque de saturation imprevue"] },
+  { prompt: "Quels sont les avantages d'un disque thin ?", options: ["economie d'espace", "plus grande souplesse", "possibilite de creer plus de VM sur le meme stockage", "reservation immediate de tout l'espace"], answers: ["economie d'espace", "plus grande souplesse", "possibilite de creer plus de VM sur le meme stockage"] },
+  { prompt: "Quelles affirmations sur le Thick Eager Zeroed sont vraies ?", options: ["l'espace est reserve immediatement", "les blocs sont initialises des la creation", "la creation est plus longue", "il s'agit d'un disque dynamique"], answers: ["l'espace est reserve immediatement", "les blocs sont initialises des la creation", "la creation est plus longue"] },
+  { prompt: "Quelles affirmations sur le Thick Lazy Zeroed sont vraies ?", options: ["l'espace est reserve immediatement", "l'initialisation des blocs se fait a l'usage", "la creation est plus rapide", "tous les blocs sont initialises des le depart"], answers: ["l'espace est reserve immediatement", "l'initialisation des blocs se fait a l'usage", "la creation est plus rapide"] },
+  { prompt: "Quelles affirmations sur le swap sont vraies ?", options: ["il peut etre utilise lorsque la RAM est insuffisante", "sous Windows, on parle souvent de pagefile.sys", "sous VMware, il est lie au fichier .vswp", "dans ESXi, le .vswp est cree au demarrage de la VM"], answers: ["il peut etre utilise lorsque la RAM est insuffisante", "sous Windows, on parle souvent de pagefile.sys", "sous VMware, il est lie au fichier .vswp", "dans ESXi, le .vswp est cree au demarrage de la VM"] },
+  { prompt: "Un disque thick est un disque dynamique.", options: ["Vrai", "Faux"], answer: "Faux" },
+  { prompt: "Un disque thin permet une economie d'espace.", options: ["Vrai", "Faux"], answer: "Vrai" },
+  { prompt: "Le thin provisioning reserve tout l'espace des la creation.", options: ["Vrai", "Faux"], answer: "Faux" },
+  { prompt: "Le Thick Eager Zeroed initialise les blocs des la creation du disque.", options: ["Vrai", "Faux"], answer: "Vrai" },
+  { prompt: "Le Thick Lazy Zeroed initialise les blocs uniquement lorsqu'ils sont utilises.", options: ["Vrai", "Faux"], answer: "Vrai" },
+  { prompt: "Le swap est un espace disque utilise comme memoire temporaire.", options: ["Vrai", "Faux"], answer: "Vrai" },
+  { prompt: "Dans ESXi, le fichier .vswp est supprime a l'arret de la VM.", options: ["Vrai", "Faux"], answer: "Vrai" },
+  { prompt: "Tu crees un disque de 100 Go en thick. Quelle proposition est correcte ?", options: ["seuls les Go utilises seront alloues", "les 100 Go seront reserves immediatement", "aucun espace ne sera pris au depart", "il devient automatiquement lazy zeroed thin"], answer: "les 100 Go seront reserves immediatement" },
+  { prompt: "Tu crees un disque de 100 Go en thin et tu y stockes 15 Go de donnees. Quelle proposition est correcte ?", options: ["le disque occupe environ 100 Go immediatement", "le disque occupe environ 15 Go au depart", "le disque ne peut pas stocker de donnees", "le datastore ne voit pas ce disque"], answer: "le disque occupe environ 15 Go au depart" },
+  { prompt: "Tu veux un disque entierement pret des le depart, avec blocs deja initialises. Que choisis-tu ?", options: ["Thin", "Thick Lazy Zeroed", "Thick Eager Zeroed", "Swap"], answer: "Thick Eager Zeroed" },
+  { prompt: "Tu veux un disque thick cree plus rapidement, avec initialisation des blocs au premier usage. Que choisis-tu ?", options: ["Thick Lazy Zeroed", "Thick Eager Zeroed", "Thin suspendu", ".vswp"], answer: "Thick Lazy Zeroed" },
+  { prompt: "Plusieurs VM en thin grossissent en meme temps. Quel risque existe ?", options: ["saturation du datastore", "suppression automatique des VM", "disparition de la RAM physique", "perte du BIOS"], answer: "saturation du datastore" }
 ];
+const EXPLANATION_SIGNATURES = window.EXPLANATION_SIGNATURES || {};
 const EXPLANATIONS_BY_PROMPT = window.EXPLANATIONS_BY_PROMPT || {};
+
+function buildExplanationSignature(question) {
+  const choices = Array.isArray(question.answers) ? question.answers : question.options;
+  return `${question.prompt}||${choices.join("||")}`;
+}
+
 QUESTION_BANK.forEach((question) => {
-  question.explanation = question.explanation ?? EXPLANATIONS_BY_PROMPT[question.prompt] ?? null;
+  const signature = buildExplanationSignature(question);
+  question.explanation = question.explanation
+    ?? EXPLANATION_SIGNATURES[signature]
+    ?? EXPLANATIONS_BY_PROMPT[question.prompt]
+    ?? null;
 });
 
 const QUIZ_SIZE = 10;
@@ -421,6 +485,9 @@ errorsBtn.addEventListener("click", () => {
   showScreen("review");
 });
 reviewBackBtn.addEventListener("click", () => showScreen("result"));
+
+
+
 
 
 

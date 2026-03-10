@@ -137,3 +137,68 @@
   "Quels fichiers peuvent appartenir a une machine virtuelle VMware ?": "Une machine virtuelle VMware est composee de plusieurs fichiers. Par exemple, .vmx pour la configuration, .vmdk pour le disque, .nvram pour le BIOS/UEFI et .vswp pour le swap.",
   "Quelle difference est correcte entre hote et invite ?": "L'hote est le serveur physique ou l'hyperviseur qui heberge les machines virtuelles, tandis que l'invite est le systeme d'exploitation installe dans la VM."
 };
+
+const THICK_THIN_EXPLANATION = "Un disque virtuel peut etre cree selon plusieurs modes d'allocation d'espace. Un disque thick est un disque statique : tout l'espace du disque est reserve immediatement des la creation de la machine virtuelle. Avantages : espace garanti, meilleures performances generales, moins de risque de saturation imprevue. Inconvenient : il consomme tout l'espace des la creation. Un disque thin est un disque dynamique : il ne prend que l'espace reellement utilise et grandit progressivement selon les donnees stockees. Avantages : economie d'espace, plus grande souplesse, possibilite de creer plus de VM sur le meme stockage. Inconvenient : risque de saturation du datastore si plusieurs VM grandissent en meme temps. Le thin provisioning est automatiquement associe a un fonctionnement de type lazy zeroed.";
+const ZEROED_EXPLANATION = "L'initialisation consiste a mettre les blocs du disque a zero avant leur utilisation. Elle sert a preparer le disque virtuel pour qu'il puisse etre utilise correctement par la machine virtuelle. En Thick Eager Zeroed, tout l'espace du disque est reserve immediatement et tous les blocs sont initialises des la creation. Avantages : disque entierement pret des le depart, utile pour certains environnements exigeants, necessaire pour certaines fonctionnalites avancees. Inconvenient : creation plus longue. En Thick Lazy Zeroed, l'espace est reserve immediatement, mais l'initialisation des blocs se fait seulement au moment ou ils sont utilises. Avantage : creation plus rapide. Inconvenient : initialisation progressive lors de l'usage.";
+const SWAP_EXPLANATION = "Le swap est un espace disque utilise comme memoire temporaire lorsque la memoire vive n'est pas suffisante ou lorsque le systeme doit deplacer certaines donnees hors de la RAM. Sous Windows, le fichier de swap est generalement pagefile.sys. Sous Linux, le swap peut etre une partition swap ou un fichier swap. Sous VMware, le swap est gere avec le fichier .vswp. Dans ESXi, le fichier .vswp est cree au demarrage de la machine virtuelle et supprime a son arret.";
+
+Object.assign(window.EXPLANATIONS_BY_PROMPT, {
+  "Un disque thick est un disque :": THICK_THIN_EXPLANATION,
+  "Avec un disque thick, l'espace disque est :": THICK_THIN_EXPLANATION,
+  "Si on cree un disque de 100 Go en thick, que se passe-t-il ?": THICK_THIN_EXPLANATION,
+  "Quel est un avantage du disque thick ?": THICK_THIN_EXPLANATION,
+  "Quel est un inconvenient du disque thick ?": THICK_THIN_EXPLANATION,
+  "Un disque thin est un disque :": THICK_THIN_EXPLANATION,
+  "Avec un disque thin, l'espace disque :": THICK_THIN_EXPLANATION,
+  "Si un disque de 100 Go en thin ne contient que 20 Go de donnees, il occupera environ :": THICK_THIN_EXPLANATION,
+  "Quel est un avantage du disque thin ?": THICK_THIN_EXPLANATION,
+  "Quel est un risque principal du thin provisioning ?": THICK_THIN_EXPLANATION,
+  "Le thin provisioning est automatiquement associe a un fonctionnement de type :": THICK_THIN_EXPLANATION,
+  "La principale difference entre un disque thick et un disque thin est que :": THICK_THIN_EXPLANATION,
+  "Lequel de ces couples est correct ?": THICK_THIN_EXPLANATION,
+  "Quelle affirmation est correcte ?": THICK_THIN_EXPLANATION,
+  "Quels sont les avantages d'un disque thick ?": THICK_THIN_EXPLANATION,
+  "Quels sont les avantages d'un disque thin ?": THICK_THIN_EXPLANATION,
+  "Un disque thick est un disque dynamique.": THICK_THIN_EXPLANATION,
+  "Un disque thin permet une economie d'espace.": THICK_THIN_EXPLANATION,
+  "Le thin provisioning reserve tout l'espace des la creation.": THICK_THIN_EXPLANATION,
+  "Tu crees un disque de 100 Go en thick. Quelle proposition est correcte ?": THICK_THIN_EXPLANATION,
+  "Tu crees un disque de 100 Go en thin et tu y stockes 15 Go de donnees. Quelle proposition est correcte ?": THICK_THIN_EXPLANATION,
+  "Plusieurs VM en thin grossissent en meme temps. Quel risque existe ?": THICK_THIN_EXPLANATION,
+  "L'initialisation d'un disque consiste a :": ZEROED_EXPLANATION,
+  "L'initialisation sert a :": ZEROED_EXPLANATION,
+  "Dans le mode Thick Eager Zeroed :": ZEROED_EXPLANATION,
+  "Un avantage du Thick Eager Zeroed est que :": ZEROED_EXPLANATION,
+  "Quel est l'inconvenient principal du Thick Eager Zeroed ?": ZEROED_EXPLANATION,
+  "Le Thick Eager Zeroed est utile :": ZEROED_EXPLANATION,
+  "Dans le mode Thick Lazy Zeroed :": ZEROED_EXPLANATION,
+  "Quel est l'avantage principal du Thick Lazy Zeroed ?": ZEROED_EXPLANATION,
+  "Quel est l'inconvenient du Thick Lazy Zeroed ?": ZEROED_EXPLANATION,
+  "La difference entre Thick Eager Zeroed et Thick Lazy Zeroed concerne principalement :": ZEROED_EXPLANATION,
+  "En Thick Lazy Zeroed, les blocs sont mis a zero :": ZEROED_EXPLANATION,
+  "En Thick Eager Zeroed, les blocs sont mis a zero :": ZEROED_EXPLANATION,
+  "Quelle affirmation est correcte ?": ZEROED_EXPLANATION,
+  "Quelles affirmations sur le Thick Eager Zeroed sont vraies ?": ZEROED_EXPLANATION,
+  "Quelles affirmations sur le Thick Lazy Zeroed sont vraies ?": ZEROED_EXPLANATION,
+  "Le Thick Eager Zeroed initialise les blocs des la creation du disque.": ZEROED_EXPLANATION,
+  "Le Thick Lazy Zeroed initialise les blocs uniquement lorsqu'ils sont utilises.": ZEROED_EXPLANATION,
+  "Tu veux un disque entierement pret des le depart, avec blocs deja initialises. Que choisis-tu ?": ZEROED_EXPLANATION,
+  "Tu veux un disque thick cree plus rapidement, avec initialisation des blocs au premier usage. Que choisis-tu ?": ZEROED_EXPLANATION,
+  "Le swap est :": SWAP_EXPLANATION,
+  "Le swap est utilise lorsque :": SWAP_EXPLANATION,
+  "Sous Windows, le fichier de swap est generalement :": SWAP_EXPLANATION,
+  "Sous Linux, le swap peut etre :": SWAP_EXPLANATION,
+  "Sous VMware, le swap est gere avec le fichier :": SWAP_EXPLANATION,
+  "Dans ESXi, le fichier .vswp est :": SWAP_EXPLANATION,
+  "Le fichier .vswp correspond :": SWAP_EXPLANATION,
+  "Quelle affirmation est correcte a propos du swap ?": SWAP_EXPLANATION,
+  "Quelles affirmations sur le swap sont vraies ?": SWAP_EXPLANATION,
+  "Le swap est un espace disque utilise comme memoire temporaire.": SWAP_EXPLANATION,
+  "Dans ESXi, le fichier .vswp est supprime a l'arret de la VM.": SWAP_EXPLANATION
+});
+
+window.EXPLANATION_SIGNATURES = {
+  "Quelle affirmation est correcte ?||un disque thin reserve immediatement tout l'espace||un disque thick utilise seulement l'espace reellement consomme||un disque thin grandit selon les donnees stockees||un disque thick est toujours associe a un snapshot": THICK_THIN_EXPLANATION,
+  "Quelle affirmation est correcte ?||le thick eager zeroed initialise les blocs des la creation||le thick lazy zeroed initialise tous les blocs avant creation||le thin provisioning reserve tout l'espace immediatement||le swap remplace le disque principal": ZEROED_EXPLANATION
+};
+
