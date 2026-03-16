@@ -1,63 +1,81 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QCM APS</title>
+  <title>Generateur de QCM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app">
-    <section id="start-screen" class="card active">
-      <p class="eyebrow">QCM interactif</p>
-      <h1>Agent de prevention et de securite</h1>
-      <p class="intro">
-        Chaque session te propose 10 questions tirees aleatoirement dans la banque APS.
-        L'ordre des questions et des reponses change a chaque relance, avec au moins 3 questions frequentes d'examen par serie.
-      </p>
-      <div class="actions">
-        <button id="start-btn" class="primary">Lancer le QCM</button>
-      </div>
-    </section>
+  <div class="page-shell">
+    <header class="hero hero-copy" id="hero-section">
+        <p class="eyebrow">QCM sur mesure</p>
+        <h1>Creer des series aleatoires, corriger a la fin, garder les explications utiles.</h1>
+        <p class="hero-text">
+          Le site genere une serie a partir d'une seule liste de questions, masque les bonnes reponses pendant le test,
+          puis affiche le corrige final avec les explications quand elles existent.
+        </p>
+    </header>
 
-    <section id="quiz-screen" class="card" aria-live="polite">
-      <div class="topbar">
-        <span id="progress-text">Question 1 / 10</span>
-        <span id="score-hint">1 point par question</span>
-      </div>
+    <main class="layout" id="setup-section">
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>Parametres de serie</h2>
+          <p>Choisis seulement la taille de la serie.</p>
+        </div>
 
-      <h2 id="question-text"></h2>
-      <form id="answers-form" class="answers"></form>
-      <div class="actions">
-        <button id="next-btn" class="primary" disabled>Question suivante</button>
-      </div>
-    </section>
+        <form id="setup-form" class="stack" autocomplete="off">
+          <label class="field">
+            <span>Taille de la serie</span>
+            <select id="series-size" name="seriesSize">
+              <option value="10" selected>Sur 10</option>
+              <option value="20">Sur 20</option>
+              <option value="30">Sur 30</option>
+              <option value="40">Sur 40</option>
+            </select>
+          </label>
 
-    <section id="result-screen" class="card">
-      <p class="eyebrow">Resultat</p>
-      <h2 id="result-title"></h2>
-      <p id="result-summary" class="intro"></p>
-      <div class="actions">
-        <button id="retry-btn" class="primary">Relancer un QCM</button>
-        <button id="errors-btn" class="secondary">Voir mes erreurs</button>
-      </div>
-      <section class="result-explanations">
-        <h3>Correction commentee</h3>
-        <p id="result-explanations-summary" class="intro"></p>
-        <div id="result-explanations-list" class="review-list"></div>
+          <button class="primary-button" type="submit">Lancer la serie</button>
+        </form>
       </section>
-    </section>
+    </main>
 
-    <section id="review-screen" class="card">
-      <p class="eyebrow">Correction detaillee</p>
-      <h2>Resume question par question</h2>
-      <div id="review-list" class="review-list"></div>
-      <div class="actions">
-        <button id="review-retry-btn" class="primary">Relancer un QCM</button>
-        <button id="review-back-btn" class="secondary">Retour au resultat</button>
+    <section class="panel exam-panel hidden" id="exam-panel" hidden>
+      <div class="exam-header">
+        <div>
+          <p class="eyebrow">Serie en cours</p>
+          <h2 id="exam-title"></h2>
+          <p class="panel-subtitle" id="exam-progress"></p>
+        </div>
+      </div>
+
+      <form id="exam-form" class="questions-list" autocomplete="off"></form>
+
+      <div class="actions-row">
+        <button class="secondary-button" id="stop-exam" type="button">Arreter l'examen</button>
+        <button class="primary-button" id="next-question" type="button">Valider et continuer</button>
+        <button class="primary-button hidden" id="finish-exam" type="button">Terminer et voir le corrige</button>
       </div>
     </section>
-  </main>
+
+    <section class="panel results-panel hidden" id="results-panel" hidden>
+      <div class="panel-header">
+        <h2>Resultat final</h2>
+        <p id="results-summary" class="results-score"></p>
+        <p id="results-subsummary" class="results-subsummary"></p>
+      </div>
+      <div id="results-errors" class="results-list"></div>
+      <div class="actions-row">
+        <button class="secondary-button" id="back-home" type="button">Revenir a l'accueil</button>
+        <button class="primary-button" id="restart-exam" type="button">Relancer une serie</button>
+        <button class="secondary-button" id="toggle-details" type="button">Voir le detail complet</button>
+      </div>
+      <div id="results-details" class="results-list hidden" hidden></div>
+    </section>
+  </div>
 
   <script src="questions-data.js"></script>
   <script src="script.js"></script>

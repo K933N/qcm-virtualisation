@@ -1,348 +1,354 @@
-﻿const QUESTION_BANK = Array.isArray(window.QUESTION_BANK_DATA) ? window.QUESTION_BANK_DATA : [];
-const PRIORITY_IDS = new Set(Array.isArray(window.PRIORITY_QUESTION_IDS) ? window.PRIORITY_QUESTION_IDS : []);
-const QUIZ_SIZE = 10;
-const MIN_PRIORITY_QUESTIONS = 3;
-const LETTERS = ["A", "B", "C", "D"];
+(function () {
+  const state = {
+    questions: normalizeQuestionArray(window.DEFAULT_QUESTION_BANKS || []),
+    examQuestions: [],
+    userAnswers: [],
+    currentQuestionIndex: 0,
+    submitted: false
+  };
 
-const screens = {
-  start: document.getElementById("start-screen"),
-  quiz: document.getElementById("quiz-screen"),
-  result: document.getElementById("result-screen"),
-  review: document.getElementById("review-screen"),
-};
+  const heroSection = document.getElementById("hero-section");
+  const setupSection = document.getElementById("setup-section");
+  const setupForm = document.getElementById("setup-form");
+  const seriesSizeInput = document.getElementById("series-size");
+  const examPanel = document.getElementById("exam-panel");
+  const examTitle = document.getElementById("exam-title");
+  const examProgress = document.getElementById("exam-progress");
+  const examForm = document.getElementById("exam-form");
+  const stopExamButton = document.getElementById("stop-exam");
+  const nextQuestionButton = document.getElementById("next-question");
+  const finishExamButton = document.getElementById("finish-exam");
+  const resultsPanel = document.getElementById("results-panel");
+  const resultsSummary = document.getElementById("results-summary");
+  const resultsSubsummary = document.getElementById("results-subsummary");
+  const resultsErrors = document.getElementById("results-errors");
+  const resultsDetails = document.getElementById("results-details");
+  const backHomeButton = document.getElementById("back-home");
+  const restartExamButton = document.getElementById("restart-exam");
+  const toggleDetailsButton = document.getElementById("toggle-details");
 
-const startBtn = document.getElementById("start-btn");
-const nextBtn = document.getElementById("next-btn");
-const retryBtn = document.getElementById("retry-btn");
-const errorsBtn = document.getElementById("errors-btn");
-const reviewRetryBtn = document.getElementById("review-retry-btn");
-const reviewBackBtn = document.getElementById("review-back-btn");
+  resetToHome();
 
-const progressText = document.getElementById("progress-text");
-const scoreHint = document.getElementById("score-hint");
-const questionText = document.getElementById("question-text");
-const answersForm = document.getElementById("answers-form");
-const resultTitle = document.getElementById("result-title");
-const resultSummary = document.getElementById("result-summary");
-const resultExplanationsSummary = document.getElementById("result-explanations-summary");
-const resultExplanationsList = document.getElementById("result-explanations-list");
-const reviewList = document.getElementById("review-list");
+  setupForm.addEventListener("submit", handleStartExam);
 
-let currentQuiz = [];
-let currentIndex = 0;
-let userResults = [];
+  stopExamButton.addEventListener("click", stopExamEarly);
+  finishExamButton.addEventListener("click", finishExam);
+  nextQuestionButton.addEventListener("click", goToNextQuestion);
+  backHomeButton.addEventListener("click", resetToHome);
+  restartExamButton.addEventListener("click", restartExam);
+  toggleDetailsButton.addEventListener("click", toggleResultsDetails);
+  window.addEventListener("pageshow", resetToHome);
 
-function shuffle(array) {
-  const copy = [...array];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-function isMultiple(question) {
-  return Array.isArray(question.answers);
-}
-
-function uniqueById(items) {
-  const seen = new Set();
-  return items.filter((item) => {
-    if (seen.has(item.id)) {
-      return false;
+  function normalizeQuestionArray(items) {
+    if (!Array.isArray(items)) {
+      return [];
     }
-    seen.add(item.id);
-    return true;
-  });
-}
 
-function buildWeightedPool(basePool) {
-  const weighted = [];
-  basePool.forEach((question) => {
-    weighted.push(question);
-    if (question.priority) {
-      weighted.push(question);
-      weighted.push(question);
+    return items
+      .map((item, index) => normalizeQuestion(item, index))
+      .filter(Boolean);
+  }
+
+  function normalizeQuestion(item, index) {
+    if (!item || typeof item !== "object") {
+      return null;
     }
-  });
-  return weighted;
-}
 
-function pickUniqueRandom(pool, count, excludedIds = new Set()) {
-  const weighted = shuffle(buildWeightedPool(pool));
-  const picked = [];
-  const localExcluded = new Set(excludedIds);
+    const choices = Array.isArray(item.choices) ? item.choices.map(normalizeText).filter(Boolean) : [];
+    const answer = Number(item.answer);
+    const question = normalizeText(item.question);
 
-  for (const question of weighted) {
-    if (picked.length >= count) {
-      break;
+    if (!question || choices.length < 2 || Number.isNaN(answer) || answer < 0 || answer >= choices.length) {
+      return null;
     }
-    if (localExcluded.has(question.id)) {
-      continue;
+
+    return {
+      id: item.id || `q-${index + 1}`,
+      question,
+      choices,
+      answer,
+      explanation: normalizeText(item.explanation)
+    };
+  }
+
+  function normalizeText(value) {
+    if (value === null || value === undefined) {
+      return "";
     }
-    localExcluded.add(question.id);
-    picked.push(question);
+
+    return String(value)
+      .replace(/\r/g, "")
+      .replace(/\uFFFD/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  if (picked.length < count) {
-    for (const question of shuffle(pool)) {
-      if (picked.length >= count) {
-        break;
-      }
-      if (localExcluded.has(question.id)) {
-        continue;
-      }
-      localExcluded.add(question.id);
-      picked.push(question);
+  function handleStartExam(event) {
+    event.preventDefault();
+    const size = Number(seriesSizeInput.value);
+    startRandomExam(size);
+  }
+
+  function startRandomExam(size) {
+    if (!Number.isInteger(size) || size <= 0) {
+      alert("La taille de la serie est invalide.");
+      return;
+    }
+
+    const generated = shuffleArray(state.questions);
+
+    if (generated.length < size) {
+      alert("Il n'y a pas assez de questions disponibles pour cette serie.");
+      return;
+    }
+
+    state.examQuestions = generated.slice(0, size).map(shuffleQuestionChoices);
+    state.userAnswers = new Array(size).fill(null);
+    state.currentQuestionIndex = 0;
+    state.submitted = false;
+
+    renderExam(size);
+  }
+
+  function restartExam() {
+    const size = state.examQuestions.length || Number(seriesSizeInput.value);
+    startRandomExam(size);
+  }
+
+  function renderExam(size) {
+    heroSection.classList.add("hidden");
+    setupSection.classList.add("hidden");
+    examPanel.classList.remove("hidden");
+    examPanel.hidden = false;
+    resultsPanel.classList.add("hidden");
+    resultsPanel.hidden = true;
+
+    examTitle.textContent = `Serie sur ${size} questions`;
+    renderCurrentQuestion();
+    window.scrollTo({ top: examPanel.offsetTop - 16, behavior: "smooth" });
+  }
+
+  function resetToHome() {
+    state.examQuestions = [];
+    state.userAnswers = [];
+    state.currentQuestionIndex = 0;
+    state.submitted = false;
+
+    heroSection.classList.remove("hidden");
+    setupSection.classList.remove("hidden");
+    examPanel.classList.add("hidden");
+    examPanel.hidden = true;
+    resultsPanel.classList.add("hidden");
+    resultsPanel.hidden = true;
+    examTitle.textContent = "";
+    examProgress.textContent = "";
+    examForm.innerHTML = "";
+    resultsErrors.innerHTML = "";
+    resultsDetails.innerHTML = "";
+    resultsSummary.textContent = "";
+    resultsSubsummary.textContent = "";
+    resultsDetails.classList.add("hidden");
+    resultsDetails.hidden = true;
+    toggleDetailsButton.textContent = "Voir le detail complet";
+  }
+
+  function renderCurrentQuestion() {
+    const index = state.currentQuestionIndex;
+    const question = state.examQuestions[index];
+    examProgress.textContent = `Question ${index + 1} sur ${state.examQuestions.length}`;
+    examForm.innerHTML = renderQuestionCard(question, index, state.userAnswers[index]);
+    nextQuestionButton.classList.toggle("hidden", index === state.examQuestions.length - 1);
+    finishExamButton.classList.toggle("hidden", index !== state.examQuestions.length - 1);
+    updateActionButtons();
+  }
+
+  function renderQuestionCard(question, index, selectedIndex) {
+    const choices = question.choices
+      .map((choice, choiceIndex) => {
+        const inputId = `q${index}-c${choiceIndex}`;
+        const checked = selectedIndex === choiceIndex ? "checked" : "";
+        return `
+          <label class="choice-option" for="${inputId}">
+            <input id="${inputId}" type="radio" name="question-${index}" value="${choiceIndex}" ${checked}>
+            <span>${escapeHtml(choice)}</span>
+          </label>
+        `;
+      })
+      .join("");
+
+    return `
+      <article class="question-card">
+        <p class="question-meta">Question ${index + 1}</p>
+        <p class="question-text">${escapeHtml(question.question)}</p>
+        <div class="choices">${choices}</div>
+      </article>
+    `;
+  }
+
+  function storeCurrentAnswer() {
+    const checked = examForm.querySelector(`input[name="question-${state.currentQuestionIndex}"]:checked`);
+    state.userAnswers[state.currentQuestionIndex] = checked ? Number(checked.value) : null;
+  }
+
+  function updateActionButtons() {
+    const selectedIndex = state.userAnswers[state.currentQuestionIndex];
+    const isAnswered = selectedIndex !== null && selectedIndex !== undefined;
+
+    if (!nextQuestionButton.classList.contains("hidden")) {
+      nextQuestionButton.disabled = !isAnswered;
+    }
+
+    if (!finishExamButton.classList.contains("hidden")) {
+      finishExamButton.disabled = !isAnswered;
     }
   }
 
-  return picked;
-}
-
-function pickQuestions() {
-  const enrichedBank = QUESTION_BANK.map((question) => ({
-    ...question,
-    priority: PRIORITY_IDS.has(question.id) || question.priority === true,
-  }));
-
-  const priorityPool = enrichedBank.filter((question) => question.priority);
-  const regularPool = enrichedBank.filter((question) => !question.priority);
-  const guaranteedCount = Math.min(MIN_PRIORITY_QUESTIONS, QUIZ_SIZE, priorityPool.length);
-  const guaranteed = pickUniqueRandom(priorityPool, guaranteedCount);
-  const excludedIds = new Set(guaranteed.map((question) => question.id));
-  const remainingCount = Math.max(0, QUIZ_SIZE - guaranteed.length);
-  const remainingPool = uniqueById([...priorityPool, ...regularPool]);
-  const remainder = pickUniqueRandom(remainingPool, remainingCount, excludedIds);
-
-  return shuffle([...guaranteed, ...remainder]).map((question) => ({
-    ...question,
-    shuffledOptions: shuffle(question.options),
-  }));
-}
-
-function showScreen(name) {
-  Object.values(screens).forEach((screen) => screen.classList.remove("active"));
-  screens[name].classList.add("active");
-}
-
-function updateNextButtonState() {
-  const inputs = Array.from(answersForm.querySelectorAll('input[name="answer"]'));
-  nextBtn.disabled = !inputs.some((input) => input.checked);
-}
-
-function startQuiz() {
-  currentQuiz = pickQuestions();
-  currentIndex = 0;
-  userResults = [];
-  renderQuestion();
-  showScreen("quiz");
-}
-
-function renderQuestion() {
-  const question = currentQuiz[currentIndex];
-  const multiple = isMultiple(question);
-  progressText.textContent = `Question ${currentIndex + 1} / ${QUIZ_SIZE}`;
-  scoreHint.textContent = multiple ? "Plusieurs reponses possibles" : "1 point par question";
-  questionText.textContent = question.prompt;
-  nextBtn.disabled = true;
-  answersForm.innerHTML = "";
-
-  question.shuffledOptions.forEach((option, index) => {
-    const id = `answer-${currentIndex}-${index}`;
-    const wrapper = document.createElement("label");
-    wrapper.className = "answer-option";
-    wrapper.htmlFor = id;
-
-    const input = document.createElement("input");
-    input.type = multiple ? "checkbox" : "radio";
-    input.name = "answer";
-    input.id = id;
-    input.value = option;
-    input.addEventListener("change", updateNextButtonState);
-
-    const letter = document.createElement("span");
-    letter.className = "answer-label";
-    letter.textContent = LETTERS[index] || `${index + 1}`;
-
-    const text = document.createElement("span");
-    text.textContent = option;
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(letter);
-    wrapper.appendChild(text);
-    answersForm.appendChild(wrapper);
-  });
-}
-
-function normalizeList(values) {
-  return [...values].sort((a, b) => a.localeCompare(b));
-}
-
-function formatAnswer(answer) {
-  if (Array.isArray(answer)) {
-    return answer.join(", ");
-  }
-  return answer;
-}
-
-function roundScore(value) {
-  return Math.round(value * 100) / 100;
-}
-
-function formatPoints(value) {
-  if (Number.isInteger(value)) {
-    return `${value}`;
-  }
-  return value.toFixed(2).replace(/\.?0+$/, "");
-}
-
-function calculateQuestionScore(correctAnswer, userAnswer) {
-  if (!Array.isArray(correctAnswer)) {
-    return userAnswer === correctAnswer ? 1 : 0;
-  }
-
-  const correctSet = new Set(correctAnswer);
-  const userSet = new Set(userAnswer);
-  let correctSelected = 0;
-  let incorrectSelected = 0;
-
-  userSet.forEach((answer) => {
-    if (correctSet.has(answer)) {
-      correctSelected += 1;
-    } else {
-      incorrectSelected += 1;
+  function goToNextQuestion() {
+    if (!state.examQuestions.length) {
+      return;
     }
-  });
 
-  return Math.max(0, roundScore((correctSelected - incorrectSelected) / correctAnswer.length));
-}
+    storeCurrentAnswer();
+    if (state.userAnswers[state.currentQuestionIndex] === null) {
+      return;
+    }
 
-function storeAnswer() {
-  const selected = Array.from(answersForm.querySelectorAll('input[name="answer"]:checked')).map((input) => input.value);
-  if (selected.length === 0) {
-    return false;
+    const nextIndex = state.currentQuestionIndex + 1;
+
+    if (nextIndex >= state.examQuestions.length) {
+      return;
+    }
+
+    state.currentQuestionIndex = nextIndex;
+    renderCurrentQuestion();
+    window.scrollTo({ top: examPanel.offsetTop - 16, behavior: "smooth" });
   }
 
-  const question = currentQuiz[currentIndex];
-  const correctAnswer = isMultiple(question) ? normalizeList(question.answers) : question.answer;
-  const userAnswer = isMultiple(question) ? normalizeList(selected) : selected[0];
-  const pointsEarned = calculateQuestionScore(correctAnswer, userAnswer);
-  const isCorrect = pointsEarned === 1;
+  function finishExam() {
+    if (state.submitted || !state.examQuestions.length) {
+      return;
+    }
 
-  userResults.push({
-    prompt: question.prompt,
-    userAnswer,
-    correctAnswer,
-    isCorrect,
-    pointsEarned,
-    explanation: question.explanation,
-    priority: question.priority,
-  });
+    storeCurrentAnswer();
+    if (state.userAnswers[state.currentQuestionIndex] === null) {
+      return;
+    }
 
-  return true;
-}
-
-function nextQuestion() {
-  if (!storeAnswer()) {
-    return;
+    state.submitted = true;
+    showResults(state.examQuestions.length);
   }
 
-  currentIndex += 1;
-  if (currentIndex < currentQuiz.length) {
-    renderQuestion();
-    return;
+  function stopExamEarly() {
+    if (state.submitted || !state.examQuestions.length) {
+      return;
+    }
+
+    state.submitted = true;
+    showResults(state.currentQuestionIndex);
   }
 
-  renderResults();
-  showScreen("result");
-}
+  function showResults(questionCount) {
+    const answers = state.examQuestions.slice(0, questionCount).map((question, index) => {
+      const selectedIndex = state.userAnswers[index];
+      const isCorrect = selectedIndex === question.answer;
 
-function renderResults() {
-  const score = roundScore(userResults.reduce((total, result) => total + result.pointsEarned, 0));
-  resultTitle.textContent = `Ta note : ${formatPoints(score)} / ${QUIZ_SIZE}`;
-  resultSummary.textContent = score === QUIZ_SIZE
-    ? "Sans faute. Relance pour avoir un nouveau tirage aleatoire."
-    : "Tu peux voir tes erreurs en detail, puis relancer un nouveau QCM quand tu veux.";
-  renderResultExplanations();
-}
+      return {
+        question,
+        selectedIndex,
+        isCorrect
+      };
+    });
 
-function createCorrectionItem(result, indexLabel) {
-  const item = document.createElement("article");
-  item.className = `review-item ${result.isCorrect ? "good" : result.pointsEarned > 0 ? "partial" : "bad"}`;
-
-  const title = document.createElement("h3");
-  title.textContent = `${indexLabel}. ${result.prompt}`;
-
-  const score = document.createElement("p");
-  score.className = "review-score";
-  if (result.isCorrect) {
-    score.textContent = "1 point : bonne reponse";
-  } else if (result.pointsEarned > 0) {
-    score.textContent = `${formatPoints(result.pointsEarned)} point sur 1 : reponse partiellement correcte`;
-  } else {
-    score.textContent = "0 point : mauvaise reponse";
+    const score = answers.filter((entry) => entry.isCorrect).length;
+    renderResults(answers, score);
   }
 
-  const chosen = document.createElement("p");
-  chosen.textContent = `Ta reponse : ${formatAnswer(result.userAnswer)}`;
+  function renderResults(answers, score) {
+    examPanel.classList.add("hidden");
+    examPanel.hidden = true;
+    resultsPanel.classList.remove("hidden");
+    resultsPanel.hidden = false;
+    const percentage = Math.round((score / answers.length) * 100);
+    const wrongAnswers = answers.filter((entry) => !entry.isCorrect);
 
-  const correct = document.createElement("p");
-  correct.textContent = `Bonne reponse : ${formatAnswer(result.correctAnswer)}`;
+    resultsSummary.textContent = `${score}/${answers.length}`;
+    resultsSubsummary.textContent = `${percentage}% de bonnes reponses. ${wrongAnswers.length} erreur(s).`;
 
-  item.appendChild(title);
-  item.appendChild(score);
-  item.appendChild(chosen);
-  item.appendChild(correct);
+    resultsErrors.innerHTML = wrongAnswers.length
+      ? wrongAnswers.map((entry, index) => renderDetailedCard(entry, index)).join("")
+      : `<article class="result-card"><p class="result-question">Aucune erreur sur cette serie.</p></article>`;
 
-  if (result.explanation) {
-    const explanation = document.createElement("p");
-    explanation.className = "review-explanation";
-    explanation.textContent = `Explication de cours : ${result.explanation}`;
-    item.appendChild(explanation);
+    resultsDetails.innerHTML = answers.map((entry, index) => renderDetailedCard(entry, index)).join("");
+    resultsDetails.classList.add("hidden");
+    resultsDetails.hidden = true;
+    toggleDetailsButton.textContent = "Voir le detail complet";
+
+    window.scrollTo({ top: resultsPanel.offsetTop - 16, behavior: "smooth" });
   }
 
-  return item;
-}
+  function renderDetailedCard(entry, index) {
+    const userAnswer =
+      entry.selectedIndex === null
+        ? "Aucune reponse"
+        : entry.question.choices[entry.selectedIndex];
+    const correctAnswer = entry.question.choices[entry.question.answer];
+    const statusClass = entry.isCorrect ? "status-ok" : "status-ko";
+    const statusLabel = entry.isCorrect ? "Bonne reponse" : "Erreur";
+    const explanation = entry.question.explanation
+      ? `<div class="explanation-box"><strong>Explication :</strong> ${escapeHtml(entry.question.explanation)}</div>`
+      : "";
 
-function renderResultExplanations() {
-  resultExplanationsList.innerHTML = "";
-
-  const explainedMistakes = userResults.filter((result) => !result.isCorrect && result.explanation);
-  const explainedPriority = userResults.filter((result) => result.priority && result.explanation);
-  const explainedCorrect = userResults.filter((result) => result.isCorrect && result.explanation);
-  const itemsToShow = explainedMistakes.length > 0
-    ? explainedMistakes
-    : explainedPriority.length > 0
-      ? explainedPriority.slice(0, 3)
-      : explainedCorrect.slice(0, 3);
-
-  if (explainedMistakes.length > 0) {
-    resultExplanationsSummary.textContent = "Voici les notions a revoir en priorite sur les questions ratees de cette session.";
-  } else if (itemsToShow.length > 0) {
-    resultExplanationsSummary.textContent = "Aucune erreur avec explication sur cette session. Voici quelques rappels de cours utiles du tirage.";
-  } else {
-    resultExplanationsSummary.textContent = "Aucune explication de cours n'est disponible pour les questions de cette session.";
+    return `
+      <article class="result-card">
+        <p class="result-meta">Question ${index + 1}</p>
+        <p class="result-question">${escapeHtml(entry.question.question)}</p>
+        <div>Ta reponse : <strong>${escapeHtml(userAnswer)}</strong></div>
+        <div>Bonne reponse : <strong>${escapeHtml(correctAnswer)}</strong></div>
+        <p class="status-line ${statusClass}">${statusLabel}</p>
+        ${explanation}
+      </article>
+    `;
   }
 
-  itemsToShow.forEach((result, index) => {
-    resultExplanationsList.appendChild(createCorrectionItem(result, index + 1));
-  });
-}
+  function toggleResultsDetails() {
+    const isHidden = resultsDetails.classList.contains("hidden");
+    resultsDetails.classList.toggle("hidden", !isHidden);
+    resultsDetails.hidden = !isHidden ? true : false;
+    toggleDetailsButton.textContent = isHidden ? "Masquer le detail complet" : "Voir le detail complet";
+  }
 
-function renderReview() {
-  reviewList.innerHTML = "";
-  userResults.forEach((result, index) => {
-    reviewList.appendChild(createCorrectionItem(result, index + 1));
-  });
-}
+  function shuffleArray(items) {
+    const clone = [...items];
+    for (let index = clone.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [clone[index], clone[randomIndex]] = [clone[randomIndex], clone[index]];
+    }
+    return clone;
+  }
 
-startBtn.addEventListener("click", startQuiz);
-nextBtn.addEventListener("click", nextQuestion);
-retryBtn.addEventListener("click", startQuiz);
-reviewRetryBtn.addEventListener("click", startQuiz);
-errorsBtn.addEventListener("click", () => {
-  renderReview();
-  showScreen("review");
-});
-reviewBackBtn.addEventListener("click", () => showScreen("result"));
+  function shuffleQuestionChoices(question) {
+    const choiceEntries = question.choices.map((choice, index) => ({
+      choice,
+      isCorrect: index === question.answer
+    }));
+    const shuffledEntries = shuffleArray(choiceEntries);
+
+    return {
+      ...question,
+      choices: shuffledEntries.map((entry) => entry.choice),
+      answer: shuffledEntries.findIndex((entry) => entry.isCorrect)
+    };
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  examForm.addEventListener("change", storeCurrentAnswer);
+  examForm.addEventListener("change", updateActionButtons);
+})();
